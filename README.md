@@ -24,3 +24,7 @@ The filter fetches it's configuration from the environment through:
 - `MYSQL_USER`: Username of the SQL user (default `root`)
 - `MYSQL_PASSWORD`: Password of the SQL user (default `secret`)
 - `MYSQL_DATABASE`: Database to perform queries to (default `trlog`)
+
+## Example
+
+See `test.md` and the generated `test.pdf` files for an example.
