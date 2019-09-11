@@ -24,9 +24,9 @@ def action(options, data, element, doc):
 
     element.classes = ["sql"]
     return [
-        Header(Str("Query"), level=3),
+        Header(Str("Query"), level=4),
         element,
-        Header(Str("Result"), level=3),
+        Header(Str("Result"), level=4),
         table,
     ]
 
