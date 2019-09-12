@@ -3,6 +3,7 @@
 import sys
 from os import getenv
 import MySQLdb
+import sqlparse
 from panflute import *
 
 host = getenv("MYSQL_HOST", "127.0.0.1")
@@ -12,14 +13,36 @@ db = getenv("MYSQL_DATABASE", "trlog")
 
 
 def action(options, data, element, doc):
-    no_result = options.get("no_result", False)
+
+    # print(options, file=sys.stderr)
+
+    if isinstance(options, dict):
+        no_result = options.get("no_result", False)
+    else:
+        # If options is not a dict, it is the actual data
+        no_result = False
+        data = str(options)
+
+    err = None
 
     cur = db.cursor()
-    cur.execute(element.text)
+    try:
+        cur.execute(data)
+    except MySQLdb.IntegrityError as e:
+        err = convert_text(f"Error: {e}")
 
-    element.classes = ["sql"]
+    # Remove yaml block so that the output can still be nicly formatted
+    yaml_idx = element.text.find("---")
+    if yaml_idx >= 0:
+        fmt_data = element.text[yaml_idx + 4 :]
+    else:
+        fmt_data = element.text
+
     if no_result:
-        return element
+        if err:
+            return [CodeBlock(fmt_data, classes=["sql"]), *err]
+        else:
+            return CodeBlock(fmt_data, classes=["sql"])
 
     cells = [
         TableRow(*[TableCell(Plain(Str(str(v)))) for v in row])
@@ -29,12 +52,21 @@ def action(options, data, element, doc):
 
     table = Table(*cells, header=column_names)
 
-    return [
-        Header(Str("Query"), level=4),
-        element,
-        Header(Str("Result"), level=4),
-        table,
-    ]
+    if err:
+        return [
+            Header(Str("Query"), level=4),
+            CodeBlock(fmt_data, classes=["sql"]),
+            Header(Str("Result"), level=4),
+            *err,
+            table,
+        ]
+    else:
+        return [
+            Header(Str("Query"), level=4),
+            CodeBlock(fmt_data, classes=["sql"]),
+            Header(Str("Result"), level=4),
+            table,
+        ]
 
 
 if __name__ == "__main__":
