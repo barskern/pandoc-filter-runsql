@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 from os import getenv
 import MySQLdb
 from panflute import *
@@ -11,8 +12,14 @@ db = getenv("MYSQL_DATABASE", "trlog")
 
 
 def action(options, data, element, doc):
+    no_result = options.get("no_result", False)
+
     cur = db.cursor()
     cur.execute(element.text)
+
+    element.classes = ["sql"]
+    if no_result:
+        return element
 
     cells = [
         TableRow(*[TableCell(Plain(Str(str(v)))) for v in row])
@@ -22,7 +29,6 @@ def action(options, data, element, doc):
 
     table = Table(*cells, header=column_names)
 
-    element.classes = ["sql"]
     return [
         Header(Str("Query"), level=4),
         element,
