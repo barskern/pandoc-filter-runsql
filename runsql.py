@@ -5,6 +5,7 @@ from os import getenv
 import MySQLdb
 import sqlparse
 from panflute import *
+import sqlparse
 
 host = getenv("MYSQL_HOST", "127.0.0.1")
 user = getenv("MYSQL_USER", "root")
@@ -13,9 +14,6 @@ db = getenv("MYSQL_DATABASE", "trlog")
 
 
 def action(options, data, element, doc):
-
-    # print(options, file=sys.stderr)
-
     if isinstance(options, dict):
         no_result = options.get("no_result", False)
     else:
@@ -31,12 +29,7 @@ def action(options, data, element, doc):
     except MySQLdb.IntegrityError as e:
         err = convert_text(f"Error: {e}")
 
-    # Remove yaml block so that the output can still be nicly formatted
-    yaml_idx = element.text.find("---")
-    if yaml_idx >= 0:
-        fmt_data = element.text[yaml_idx + 4 :]
-    else:
-        fmt_data = element.text
+    fmt_data = sqlparse.format(data, reindent=True, keyword_case="upper")
 
     if no_result:
         if err:
@@ -53,20 +46,9 @@ def action(options, data, element, doc):
     table = Table(*cells, header=column_names)
 
     if err:
-        return [
-            Header(Str("Query"), level=4),
-            CodeBlock(fmt_data, classes=["sql"]),
-            Header(Str("Result"), level=4),
-            *err,
-            table,
-        ]
+        return [CodeBlock(fmt_data, classes=["sql"]), *err, table]
     else:
-        return [
-            Header(Str("Query"), level=4),
-            CodeBlock(fmt_data, classes=["sql"]),
-            Header(Str("Result"), level=4),
-            table,
-        ]
+        return [CodeBlock(fmt_data, classes=["sql"]), table]
 
 
 if __name__ == "__main__":
