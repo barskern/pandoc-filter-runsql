@@ -35,7 +35,10 @@ def action(options, data, element, doc):
         if err:
             return [CodeBlock(fmt_data, classes=["sql"]), *err]
         else:
-            return CodeBlock(fmt_data, classes=["sql"])
+            return [
+                CodeBlock(fmt_data, classes=["sql"]),
+                *convert_text(f"Query successfully: {cur.rowcount} row{'s' if cur.rowcount > 1 else ''} affected"),
+            ]
 
     cells = [
         TableRow(*[TableCell(Plain(Str(str(v)))) for v in row])
